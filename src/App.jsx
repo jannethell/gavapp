@@ -43,7 +43,7 @@ export default function App() {
 
   return (
     <div style={{ backgroundColor: "#0f0f0f", color: "white", padding: "2rem", fontFamily: "sans-serif", minHeight: "100vh" }}>
-      <h1>Likvidationspris & GAV Kalkylator</h1>
+      <h1>GAV Kalkylator</h1>
       <div style={{ maxWidth: "400px", display: "flex", flexDirection: "column", gap: "1rem" }}>
         <label>Nuvarande GAV (BTC): <input type="number" value={currentGav} onChange={e => setCurrentGav(+e.target.value)} /></label>
 
