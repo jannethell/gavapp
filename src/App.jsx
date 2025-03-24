@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function App() {
   const [currentGav, setCurrentGav] = useState("");
@@ -7,50 +7,62 @@ export default function App() {
   const [leverage, setLeverage] = useState("");
   const [targetGav, setTargetGav] = useState("");
   const [result, setResult] = useState("");
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState("");
 
   const fetchBTC = async () => {
     try {
-      const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
-      const data = await response.json();
+      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+      const data = await res.json();
       setMarketPrice(data.bitcoin.usd);
       setLastUpdated(new Date().toLocaleTimeString());
-    } catch (error) {
+    } catch {
       alert("Kunde inte hämta pris.");
     }
   };
 
-  const calculate = () => {
-    const price = parseFloat(marketPrice);
-    const current = parseFloat(currentGav);
-    const target = parseFloat(targetGav);
-    const btc = parseFloat(btcAmount);
-    const lev = parseFloat(leverage);
+  useEffect(() => {
+    fetchBTC();
+  }, []);
 
-    if (price >= current || target >= current || price >= target) {
-      setResult("För att sänka ditt GAV måste marknadspriset vara lägre än både nuvarande och önskat GAV.");
+  const calculate = () => {
+    const numericGav = parseFloat(currentGav);
+    const numericTarget = parseFloat(targetGav);
+    const numericPrice = parseFloat(marketPrice);
+    const numericLeverage = parseFloat(leverage);
+    const numericBtc = parseFloat(btcAmount);
+
+    if (
+      numericPrice >= numericGav ||
+      numericTarget >= numericGav ||
+      numericPrice >= numericTarget
+    ) {
+      setResult(
+        "För att sänka ditt GAV måste marknadspriset vara lägre än både nuvarande och önskat GAV."
+      );
       return;
     }
 
-    const currentUsd = btc * price;
-    const totalInvestment = (currentUsd * (current - target)) / (target - price);
-    const actualCapital = totalInvestment / lev;
-    const btcOrder = actualCapital / price * lev;
+    const positionUsd = numericBtc * numericPrice;
+    const totalInvestment =
+      (positionUsd * (numericGav - numericTarget)) /
+      (numericTarget - numericPrice);
+    const actualCapital = totalInvestment / numericLeverage;
+    const btcOrder = actualCapital / numericPrice * numericLeverage;
 
     setResult(
-      `Du behöver öppna en position på totalt ${totalInvestment.toFixed(2)} USD vid ${price} USD\n` +
-      `vilket innebär att du faktiskt måste lägga in: ${actualCapital.toFixed(2)} USD med ${lev}x hävstång.\n` +
-      `\x1b[1mDet motsvarar cirka ${btcOrder.toFixed(4)} BTC i faktisk beställning.\x1b[0m`
+      `Du behöver öppna en position på totalt ${totalInvestment.toFixed(2)} USD vid ${numericPrice} USD\n` +
+      `vilket innebär att du faktiskt måste lägga in: ${actualCapital.toFixed(2)} USD med ${numericLeverage}x hävstång.\n` +
+      `<span style="background-color: #1e3a8a; color: white; padding: 2px 6px; border-radius: 4px;">Det motsvarar cirka ${btcOrder.toFixed(4)} BTC i faktisk beställning.</span>`
     );
   };
 
   return (
-    <div style={{ backgroundColor: "#111", color: "white", padding: "2rem", fontFamily: "sans-serif", minHeight: "100vh" }}>
+    <div style={{ backgroundColor: "#0a0a0a", color: "white", padding: "2rem", fontFamily: "sans-serif", minHeight: "100vh" }}>
       <h1 style={{ fontSize: "2.2rem", fontWeight: "bold" }}>GAV Kalkylator</h1>
 
       <div style={{ maxWidth: "400px", display: "flex", flexDirection: "column", gap: "1rem" }}>
         <label>Nuvarande GAV (BTC):
-          <input type="number" placeholder="ex 92000" value={currentGav} onChange={e => setCurrentGav(e.target.value)} />
+          <input type="number" placeholder="t.ex 92000" value={currentGav} onChange={e => setCurrentGav(e.target.value)} />
         </label>
 
         <label>Marknadspris just nu (BTC):
@@ -60,20 +72,22 @@ export default function App() {
         </label>
 
         <label>Nuvarande position (BTC):
-          <input type="number" placeholder="0,5" value={btcAmount} onChange={e => setBtcAmount(e.target.value)} />
+          <input type="number" placeholder="0.5" value={btcAmount} onChange={e => setBtcAmount(e.target.value)} />
         </label>
 
         <label>Hävstång:
-          <input type="number" placeholder="5" value={leverage} onChange={e => setLeverage(e.target.value)} />
+          <input type="number" placeholder="t.ex 5" value={leverage} onChange={e => setLeverage(e.target.value)} />
         </label>
 
         <label>Önskat nytt GAV (BTC):
-          <input type="number" placeholder="87000" value={targetGav} onChange={e => setTargetGav(e.target.value)} />
+          <input type="number" placeholder="t.ex 87000" value={targetGav} onChange={e => setTargetGav(e.target.value)} />
         </label>
 
         <button onClick={calculate}>Beräkna hur mycket du behöver köpa</button>
 
-        {result && <pre style={{ background: "#111", padding: "1rem", borderRadius: "8px", whiteSpace: "pre-wrap", fontFamily: "monospace" }}>{result}</pre>}
+        {result && (
+          <pre style={{ background: "#111", padding: "1rem", borderRadius: "8px", whiteSpace: "pre-wrap" }} dangerouslySetInnerHTML={{ __html: result }} />
+        )}
       </div>
     </div>
   );
