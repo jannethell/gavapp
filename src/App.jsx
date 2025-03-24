@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 
 export default function App() {
@@ -8,6 +9,7 @@ export default function App() {
   const [targetGav, setTargetGav] = useState("");
   const [result, setResult] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
+  const [maxBtcToAdd, setMaxBtcToAdd] = useState("");
 
   const fetchBTC = async () => {
     try {
@@ -30,6 +32,7 @@ export default function App() {
     const numericPrice = parseFloat(marketPrice);
     const numericLeverage = parseFloat(leverage);
     const numericBtc = parseFloat(btcAmount);
+    const numericMaxBtc = parseFloat(maxBtcToAdd);
 
     if (
       numericPrice >= numericGav ||
@@ -49,11 +52,16 @@ export default function App() {
     const actualCapital = totalInvestment / numericLeverage;
     const btcOrder = actualCapital / numericPrice * numericLeverage;
 
-    setResult(
-      `Du behöver öppna en position på totalt ${totalInvestment.toFixed(2)} USD vid ${numericPrice} USD\n` +
-      `vilket innebär att du faktiskt måste lägga in: ${actualCapital.toFixed(2)} USD med ${numericLeverage}x hävstång.\n` +
-      `<span style="background-color: #1e3a8a; color: white; padding: 2px 6px; border-radius: 4px;">Det motsvarar cirka ${btcOrder.toFixed(4)} BTC i faktiskt köp.</span>`
-    );
+    let output = `Du behöver öppna en position på totalt ${totalInvestment.toFixed(2)} USD vid ${numericPrice} USD\n` +
+                 `vilket innebär att du faktiskt måste lägga in: ${actualCapital.toFixed(2)} USD med ${numericLeverage}x hävstång.\n` +
+                 `<span style="background-color: #1e3a8a; color: white; padding: 2px 6px; border-radius: 4px;">Det motsvarar cirka ${btcOrder.toFixed(4)} BTC i faktiskt köp.</span>`;
+
+    if (!isNaN(numericMaxBtc) && numericMaxBtc > 0) {
+      const newGav = ((numericGav * numericBtc) + (numericMaxBtc * numericPrice)) / (numericBtc + numericMaxBtc);
+      output += `\n\nOm du istället bara har ${numericMaxBtc} BTC att lägga in, får du ett nytt GAV på cirka ${newGav.toFixed(2)} USD.`;
+    }
+
+    setResult(output);
   };
 
   return (
@@ -81,6 +89,10 @@ export default function App() {
 
         <label>Önskat nytt GAV (BTC):
           <input type="number" placeholder="t.ex 87000" value={targetGav} onChange={e => setTargetGav(e.target.value)} />
+        </label>
+
+        <label>Omvänd beräkning (Jag har max BTC att lägga in):
+          <input type="number" placeholder="t.ex 0.3" value={maxBtcToAdd} onChange={e => setMaxBtcToAdd(e.target.value)} />
         </label>
 
         <button onClick={calculate}>Beräkna hur mycket du behöver köpa</button>
